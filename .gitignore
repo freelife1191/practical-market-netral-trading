@@ -17,3 +17,8 @@ __pycache__/
 *.pyc
 .venv/
 .env*
+
+# 제작 도구 스킬 (지식 스킬 사용에는 불필요)
+.agents/skills/book-to-skill/
+.agents/skills/book-to-skill-followup/
+.claude/skills/book-to-skill-followup
