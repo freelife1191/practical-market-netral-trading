@@ -1,0 +1,410 @@
+{
+  "schema_version": "1.0",
+  "name": "book-to-skill-followup",
+  "display_name": "책 지식 스킬 후속 완성",
+  "description": "Use when finishing or revalidating a skill generated from a book or document after book-to-skill conversion.",
+  "goal": "원문 대조, 탐색 가능한 지식 자료, 사용 문서, 독립 행동 시험과 사용 호스트의 최종 검사로 검증된 스킬을 완성한다.",
+  "language": "ko",
+  "risk_level": "standard",
+  "architecture": "pipeline",
+  "triggers": [
+    "book-to-skill로 만든 스킬을 원문 검수부터 문서·독립 시험·최종 검사까지 마무리해줘",
+    "변환된 책 스킬의 검증 기록을 반영해 전체 후속 보완을 진행해줘",
+    "finish this book-to-skill output, including references, docs and independent tests"
+  ],
+  "non_triggers": [
+    "책 PDF를 처음부터 스킬로 변환해줘",
+    "SKILL.md 오탈자 한 줄만 수정해줘",
+    "책 내용을 요약해줘"
+  ],
+  "inputs": [
+    {
+      "id": "request",
+      "description": "대상 프로젝트·스킬·원문·허용 쓰기 경로·사용 호스트가 명확한 요청",
+      "required": true
+    },
+    {
+      "id": "source",
+      "description": "사용 권한이 있는 원문과 동일성이 확인되는 추출 자료",
+      "required": true
+    }
+  ],
+  "outputs": [
+    {
+      "id": "preflight",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/preflight.json",
+      "required": true
+    },
+    {
+      "id": "inventory",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/inventory.json",
+      "required": true
+    },
+    {
+      "id": "source-audit",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/source-reviewer/source-audit.json",
+      "required": true
+    },
+    {
+      "id": "skill-refinement",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/skill-refinement.json",
+      "required": true
+    },
+    {
+      "id": "documentation",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/documentation.json",
+      "required": true
+    },
+    {
+      "id": "static-checks",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/static-checks.json",
+      "required": true
+    },
+    {
+      "id": "behavior-tests",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/forward-tester/behavior-tests.json",
+      "required": true
+    },
+    {
+      "id": "improvement",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/improvement.json",
+      "required": true
+    },
+    {
+      "id": "language-review",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/release-reviewer/language-review.json",
+      "required": true
+    },
+    {
+      "id": "freeze",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/release-reviewer/freeze.json",
+      "required": true
+    },
+    {
+      "id": "host-smoke",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/coordinator/host-smoke.json",
+      "required": true
+    },
+    {
+      "id": "final-review",
+      "path": "_workspace/harness/book-to-skill-followup/{run_id}/release-reviewer/final-review.json",
+      "required": true
+    }
+  ],
+  "roles": [
+    {
+      "name": "coordinator",
+      "purpose": "입력·편집·통합과 실행 상태 기록을 담당한다.",
+      "kind": "builtin",
+      "custom_agent": false,
+      "read_only": false,
+      "owns": [
+        "_workspace/harness/book-to-skill-followup/{run_id}/coordinator",
+        "_workspace/harness/book-to-skill-followup/{run_id}/host",
+        ".agents/skills",
+        "README.md",
+        "docs"
+      ],
+      "instructions": "입력 manifest에 확정한 대상 스킬과 문서의 exact write set만 편집한다. 원문과 다른 스킬, 전역 설정, 과거 실행 기록은 수정하지 않는다."
+    },
+    {
+      "name": "source-reviewer",
+      "purpose": "원문과 지식의 대응 및 귀속을 독립 검토한다.",
+      "kind": "custom",
+      "custom_agent": true,
+      "custom_agent_reason": "여러 책 기반 스킬의 후속 완성에서 반복되는 좁은 독립 검토 역할이다.",
+      "read_only": false,
+      "owns": [
+        "_workspace/harness/book-to-skill-followup/{run_id}/source-reviewer"
+      ],
+      "instructions": "대상 지식·문서는 읽기 전용이다. 자신의 검토·시험 기록 경로에만 쓴다. 역할별 세부 계약은 references/roles.md를 읽는다.",
+      "agent_config": {
+        "sandbox_mode": "workspace-write"
+      }
+    },
+    {
+      "name": "forward-tester",
+      "purpose": "최소 입력만 받은 새 컨텍스트에서 실제 요청을 수행한다.",
+      "kind": "custom",
+      "custom_agent": true,
+      "custom_agent_reason": "여러 책 기반 스킬의 후속 완성에서 반복되는 좁은 독립 검토 역할이다.",
+      "read_only": false,
+      "owns": [
+        "_workspace/harness/book-to-skill-followup/{run_id}/forward-tester"
+      ],
+      "instructions": "대상 지식·문서는 읽기 전용이다. 자신의 검토·시험 기록 경로에만 쓴다. 역할별 세부 계약은 references/roles.md를 읽는다.",
+      "agent_config": {
+        "sandbox_mode": "workspace-write"
+      }
+    },
+    {
+      "name": "release-reviewer",
+      "purpose": "고정된 최종 패키지와 증거를 독립 판정한다.",
+      "kind": "custom",
+      "custom_agent": true,
+      "custom_agent_reason": "여러 책 기반 스킬의 후속 완성에서 반복되는 좁은 독립 검토 역할이다.",
+      "read_only": false,
+      "owns": [
+        "_workspace/harness/book-to-skill-followup/{run_id}/release-reviewer"
+      ],
+      "instructions": "대상 지식·문서는 읽기 전용이다. 자신의 검토·시험 기록 경로에만 쓴다. 역할별 세부 계약은 references/roles.md를 읽는다.",
+      "agent_config": {
+        "sandbox_mode": "workspace-write"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "preflight",
+      "owner": "coordinator",
+      "depends_on": [],
+      "inputs": [
+        "request",
+        "source"
+      ],
+      "outputs": [
+        "preflight"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "inventory",
+      "owner": "coordinator",
+      "depends_on": [
+        "preflight"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "preflight"
+      ],
+      "outputs": [
+        "inventory"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "source-audit",
+      "owner": "source-reviewer",
+      "depends_on": [
+        "inventory"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "inventory"
+      ],
+      "outputs": [
+        "source-audit"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "skill-refinement",
+      "owner": "coordinator",
+      "depends_on": [
+        "source-audit"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "source-audit"
+      ],
+      "outputs": [
+        "skill-refinement"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "documentation",
+      "owner": "coordinator",
+      "depends_on": [
+        "skill-refinement"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "skill-refinement"
+      ],
+      "outputs": [
+        "documentation"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "static-checks",
+      "owner": "coordinator",
+      "depends_on": [
+        "documentation"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "documentation"
+      ],
+      "outputs": [
+        "static-checks"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "behavior-tests",
+      "owner": "forward-tester",
+      "depends_on": [
+        "static-checks"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "static-checks"
+      ],
+      "outputs": [
+        "behavior-tests"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "improvement",
+      "owner": "coordinator",
+      "depends_on": [
+        "behavior-tests"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "behavior-tests"
+      ],
+      "outputs": [
+        "improvement"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "language-review",
+      "owner": "release-reviewer",
+      "depends_on": [
+        "improvement"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "improvement"
+      ],
+      "outputs": [
+        "language-review"
+      ],
+      "parallel_group": null,
+      "completion": "DaleSeo/korean-skills의 humanizer → grammar-checker → style-guide를 실제 읽고, 현재 한국어 Markdown·JSON·YAML 전체와 의미 보존 6개 항목을 독립 판정한 증거를 기록한다.",
+      "required": true
+    },
+    {
+      "id": "freeze",
+      "owner": "release-reviewer",
+      "depends_on": [
+        "language-review"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "language-review"
+      ],
+      "outputs": [
+        "freeze"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "host-smoke",
+      "owner": "coordinator",
+      "depends_on": [
+        "freeze"
+      ],
+      "inputs": [
+        "request",
+        "source",
+        "freeze"
+      ],
+      "outputs": [
+        "host-smoke"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    },
+    {
+      "id": "final-review",
+      "owner": "release-reviewer",
+      "depends_on": [
+        "preflight",
+        "inventory",
+        "source-audit",
+        "skill-refinement",
+        "documentation",
+        "static-checks",
+        "behavior-tests",
+        "improvement",
+        "language-review",
+        "freeze",
+        "host-smoke"
+      ],
+      "inputs": [
+        "preflight",
+        "inventory",
+        "source-audit",
+        "skill-refinement",
+        "documentation",
+        "static-checks",
+        "behavior-tests",
+        "improvement",
+        "language-review",
+        "freeze",
+        "host-smoke"
+      ],
+      "outputs": [
+        "final-review"
+      ],
+      "parallel_group": null,
+      "completion": "단계별 references/evidence-contract.md 계약을 충족하고 실제 파일·해시·판정이 확인된다.",
+      "required": true
+    }
+  ],
+  "review_policy": {
+    "reviewer": "release-reviewer",
+    "max_revisions": 2,
+    "block_on": [
+      "critical",
+      "high"
+    ]
+  },
+  "failure_policy": {
+    "retry_limit": 1,
+    "required_failure": "stop",
+    "optional_failure": "partial",
+    "timeout": "호스트 600초, 개별 도구 120초. 시간 초과 기록 후 필수 작업 중단; 호스트 자동 재호출 없음."
+  },
+  "evidence_policy": {
+    "sources_required": true,
+    "effective_date_required": false,
+    "jurisdiction_required": false,
+    "uncertainty_required": true,
+    "human_review_required": false
+  }
+}

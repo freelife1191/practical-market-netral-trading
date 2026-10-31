@@ -1,0 +1,19 @@
+# 원본 도서 PDF (저작권·대용량)
+*.pdf
+
+# 작업 산출물: 렌더링된 책 페이지, 추출 텍스트, 하네스 실행 기록
+_workspace/
+output/
+tmp/
+
+# 에이전트 런타임 상태
+.omx/
+.omc/
+
+# OS / 기타
+.DS_Store
+*.log
+__pycache__/
+*.pyc
+.venv/
+.env*

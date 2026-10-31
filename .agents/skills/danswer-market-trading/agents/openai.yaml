@@ -1,0 +1,4 @@
+interface:
+  display_name: "실전 시황 트레이딩"
+  short_description: "시황·종목 선정·다섯 매매법과 자금·심리 관리의 책 기반 판단 도구"
+  default_prompt: "$danswer-market-trading을 사용해 시황, 종목 선정, 진입과 손절 조건을 연결해 내 매매 계획을 검토해줘."
